@@ -4,7 +4,7 @@ require './hitrans'
 include HITRANS
 
 class Lyrics
-  attr_accessor :lyricsurl, :itransurl, :page_url, :title, :composer, :lyricist, :singer, :album, :year, :lyrics
+  attr_accessor :lyricsurl, :showurl, :page_url, :title, :composer, :lyricist, :singer, :album, :year, :lyrics
   ERRORMSG  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<lyrics>Server is not responding to lyrics fetch instruction.</lyrics>"
 
   def initialize (host, port)
@@ -16,8 +16,8 @@ class Lyrics
       yield
       output = "<table border=\"0\" cellpadding=\"0\" style=\"color:#000;font-size:.8em\">\n<tr><td>Song: {title} </td></tr>\n<tr><td>From: {album} {year} </td></tr>\n<tr><td>Music Director: {composer} </td></tr>\n<tr><td>Lyrics: {lyricist}</td></tr>\n<tr><td>Singers: {singer} </td></tr> </table>\n<p style=\"color:#000;font-size:.8em\"> {lyrics} </p>\n<hr/><div style=\"margin-left:1em\">{links}</div>"
 
-      self.lyrics.sub!( /[\n]*/, "\n" )
-      self.lyrics.gsub!( /\n/, "\<br /\>" )
+      self.lyrics.sub!( /[\n]*/, "\n" )         #remove multiple blank lines
+      self.lyrics.gsub!( /\n/, "\<br /\>" )     #replace line breaks with <br/>
       output.sub!( "{title}", self.title )
       output.sub!( "{album}", self.album )
       output.sub!( "{composer}", self.composer )
@@ -27,7 +27,7 @@ class Lyrics
       self.year ? output.sub!( "{year}", ' @ ' + self.year ) : output.sub!( "{year}", '' )
       return output
     else
-      return "<suggestions page_url=\"#{self.page_url}\">\n" + items.first.map { |s| "<suggestion title=\"#{s[:title]}\" url=\"#{self.itransurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
+      return "<suggestions page_url=\"#{self.page_url}\">\n" + items.first.map { |s| "<suggestion title=\"#{s[:title]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
     end
   end
 end
@@ -36,7 +36,7 @@ class LI < Lyrics
   def initialize(host, port)
     super
     self.lyricsurl = "http://alpha.lyricsindia.net/songs/"
-    self.itransurl = "http://" + host + ":" + port.to_s + "/li/show/"
+    self.showurl = "http://" + host + ":" + port.to_s + "/li/show/"
   end
 
   def extract_songs(response)
@@ -80,7 +80,7 @@ class GIIT < Lyrics
     super
     self.lyricsurl = "http://giitaayan.com/"
     self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
-    self.itransurl = "http://" + host + ":" + port.to_s + "/gi/show/"
+    self.showurl = "http://" + host + ":" + port.to_s + "/gi/show/"
   end
 
   def extract_songs(response)
@@ -108,12 +108,12 @@ class GIIT < Lyrics
   end
 
   def parse(response)
-      self.title = response.match( /\\stitle\{([-0-9a-zA-Z_.,()\s\/\\#]*)\}%/ ) { HITRANS::convertHindi($1) }
-      self.album = response.match( /\\film\{([-0-9a-zA-Z_.,()\s\/\\#]*)\}%/ ) { $1 }
-      self.year = response.match( /\\year\{([0-9]*)\}%/ ) { $1 }
-      self.singer = response.match( /\\singer\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }
-      self.composer = response.match( /\\music\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }
-      self.lyricist = response.match( /\\lyrics\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }
+      self.title = response.match( /\\stitle\{([-0-9a-zA-Z_.,()\s\/\\#]*)\}%/ ) { HITRANS::convertHindi($1) }.to_s
+      self.album = response.match( /\\film\{([-0-9a-zA-Z_.,()\s\/\\#]*)\}%/ ) { $1 }.to_s
+      self.year = response.match( /\\year\{([0-9]*)\}%/ ) { $1 }.to_s
+      self.singer = response.match( /\\singer\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
+      self.composer = response.match( /\\music\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
+      self.lyricist = response.match( /\\lyrics\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
       response.gsub!(/##/, "$")
       self.lyrics = response.match( /#indian([^#]*)#endindian/ ) { $1 }.to_s
       self.lyrics = HITRANS::convertHindi( self.lyrics.gsub!( /%/, '' ) )
@@ -126,7 +126,7 @@ class GIIT < Lyrics
 end
 
 get '/' do
-  'Welcome to Hindi lyrics spitter ...'
+  'Welcome to Hindi lyrics fetcher ...'
 end
 
 get '/li/search/:title', :provides => 'text' do |t|
