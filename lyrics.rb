@@ -1,13 +1,13 @@
 # lyrics.rb
 %w[ net/http uri rexml/document rexml/xpath sinatra].each{ |gem| require gem }
-require './hitrans.rb'
+require './hitrans'
 include HITRANS
 
 class Lyrics
   attr_accessor :lyricsurl, :itransurl, :page_url, :title, :composer, :lyricist, :singer, :album, :year, :lyrics
   ERRORMSG  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<lyrics>Server is not responding to lyrics fetch instruction.</lyrics>"
 
-  def initialize
+  def initialize (host, port)
     self.title = self.lyrics = self.composer = self.lyricist = self.singer = self.album = self.year = ""
   end
 
@@ -33,10 +33,10 @@ class Lyrics
 end
 
 class LI < Lyrics
-  def initialize
+  def initialize(host, port)
     super
     self.lyricsurl = "http://alpha.lyricsindia.net/songs/"
-    self.itransurl = "http://192.168.1.150:4567/li/show/"
+    self.itransurl = "http://" + host + ":" + port.to_s + "/li/show/"
   end
 
   def extract_songs(response)
@@ -76,11 +76,11 @@ end
 class GIIT < Lyrics
   attr_accessor :cisburl
 
-  def initialize
+  def initialize(host, port)
     super
     self.lyricsurl = "http://giitaayan.com/"
     self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
-    self.itransurl = "http://192.168.1.150:4567/gi/show/"
+    self.itransurl = "http://" + host + ":" + port.to_s + "/gi/show/"
   end
 
   def extract_songs(response)
@@ -125,12 +125,16 @@ class GIIT < Lyrics
 
 end
 
+get '/' do
+  'Welcome to Hindi lyrics spitter ...'
+end
+
 get '/li/search/:title', :provides => 'text' do |t|
 
   return "Song title is empty." if t.empty?
 
-  lyrics = LI.new
-  lyrics.page_url = "<a href=\"http://192.168.1.150/\">Swapans Home</a>"
+  lyrics = LI.new(request.host, request.port)
+  lyrics.page_url = ""
   title = URI.escape(t)
   content = Net::HTTP.get(URI.parse(lyrics.lyricsurl + "search?txt=#{title}&format=xml"))
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry" ) )
@@ -149,7 +153,7 @@ get '/li/show/:id', :provides => 'text' do |id|
 
   return "Song id is empty." if id.empty?
 
-  lyrics = LI.new
+  lyrics = LI.new(request.host, request.port)
   song_id = URI.escape(id)
   content = Net::HTTP.get(URI.parse(lyrics.lyricsurl + song_id + ".xml"))
   if content.empty? || content.include?( "Sorry, no" )
@@ -162,8 +166,8 @@ get '/gi/search/:title', :provides => 'text' do |t|
 
   return "Song title is empty." if t.empty?
 
-  lyrics = GIIT.new
-  lyrics.page_url = "<a href=http://192.168.1.150:4567/>My Home</a>"
+  lyrics = GIIT.new(request.host, request.port)
+  lyrics.page_url = ""
   title = URI.escape(t)
   content = Net::HTTP.get(URI.parse(lyrics.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=search"))
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry, no" ) )
@@ -183,7 +187,7 @@ get '/gi/show/:id', :provides => 'text' do |id|
 
   return "Song id is empty." if id.empty?
 
-  lyrics = GIIT.new
+  lyrics = GIIT.new(request.host, request.port)
   song_id = URI.escape( song_id = (id[0..3] == 'cisb' ? 'cisb/'+id[4..id.length] : 'files/'+id))
   content = Net::HTTP.get(URI.parse(lyrics.cisburl + song_id + ".isb"))
   if content.empty? || content.include?( "Sorry, no" )

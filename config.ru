@@ -1,2 +1,2 @@
-require './lyrics.rb'
+require './lyrics'
 run Sinatra::Application
