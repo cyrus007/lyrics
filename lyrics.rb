@@ -26,8 +26,8 @@ class Lyrics
       return output
   end
 
-  def format(items)
-      "<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
+  def format(items, artist='', film='')
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
   end
 end
 
@@ -35,7 +35,7 @@ class LI < Lyrics
   def initialize(host, port)
     super
     self.lyricsurl = "http://alpha.lyricsindia.net/songs/"
-    self.showurl = "http://" + host + ":" + port.to_s + "/li/show/"
+    self.showurl = "http://" + host + ":" + port.to_s + "/show/li/"
     self.page_url = ""
   end
 
@@ -90,7 +90,7 @@ class GIIT < Lyrics
     super
     self.lyricsurl = "http://giitaayan.com/"
     self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
-    self.showurl = "http://" + host + ":" + port.to_s + "/gi/show/"
+    self.showurl = "http://" + host + ":" + port.to_s + "/show/gi/"
     self.page_url = ""
   end
 
@@ -156,13 +156,13 @@ class XBMC < GIIT
   def initialize(host, port)
     super
 #   self.lyricsurl = "http://192.168.1.150/itrans/"
-    self.showurl = "http://" + host + ":" + port.to_s + "/cu/show/"
+    self.showurl = "http://" + host + ":" + port.to_s + "/show/cu/"
     self.page_url = ""
   end
 
   def format_show
       yield
-      output = "<lyrics>#{self.lyrics}</lyrics>"
+      output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<lyrics>#{self.lyrics}</lyrics>"
       output.gsub!( /^\s[\s]+/, "" )       #remove multiple blank lines
 #     output.gsub!( /\n/, "\<br /\>" )     #replace line breaks with <br/>
   end
