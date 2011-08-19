@@ -141,7 +141,7 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
       self.composer = response.match( /\\music\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
       self.lyricist = response.match( /\\lyrics\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
       response.gsub!(/##/, "$")
-      response.gsub!( /%{(.*?)}/ ) { "$"+$1+"$" }
+      response.gsub!( /%\((.*?)\)/ ) { "$"+$1+"$" }
       self.lyrics = response.match( /#indian[\s\n\r%]*([^#]*)[\s\n\r%]*#endindian/ ) { $1 }.to_s
       self.lyrics = HITRANS::convertHindi( self.lyrics )
       self.lyrics.gsub!( /%/, '' )
