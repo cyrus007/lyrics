@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html> <!-- manifest="hl.manifest" -->
+<head>
+  <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <!-- link rel="apple-touch-icon" href="iphone_icon.png"/ -->
+  <!-- link rel="apple-touch-startup-image" href="iphone_startup.png"/ -->
+  <!-- link rel="stylesheet" href="hl.css" type="text/css" media="screen, mobile" title="main" charset="utf-8"/ -->
+
+  <title>Fetch song lyrics from Giitaayan</title>
+</head>
+<body onload="setTimeout(function() { window.scrollTo(0,1) }, 100);">
+    <p><label>Song:<input name="title" id="title" size="30"></label> <button id="submit" type="submit"> Fetch </button></p>
+  <hr/>
+  <div id="lyrics-box"></div>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+  <script>
+     var baseurl = "http://" + window.location.host + "/";
+
+     var showLyrics = function( response ) {
+            if(capture = /sorry/i.exec(response)) {
+                  output = "<p>Did not find any lyrics matching your request.</p>";
+                  $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html(output); });
+                  return 0;
+            }
+            $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html(response); });
+     }
+
+     var giitResult = function( response ) {
+           if(capture = /Sorry, no/i.exec(response)) { 
+             $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html("Sorry, no results found."); });
+             return 0;
+           }
+           else {
+             if( response.size == 0 ) { 
+               $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html("Error in processing output from server."); });
+               return 0;
+             }
+             else {
+               var output = "<table id=\"stable\" border=\"0\" cellpadding=\"3\"><tr><td width=99%>Title</td><td style=\"display:none;\">ID</td></tr>";
+               $.each(response, function() {
+                  title =  this.title;
+                  song_no = this.id;
+                  output = output + "<tr><td>" + title + "</td><td style=\"display:none;\">" + song_no + "</td></tr>";
+               });
+               output = output + "</table>";
+               $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html(output); });
+             }
+           }
+           $("tr").click(function(event){
+             var index = $("tr").index(this);
+             var song_no = this.lastChild.innerHTML;
+             $("#lyrics-box").html('');             //just in case
+             $.ajax({
+                        type     : "GET",
+                        url      : baseurl + "show/gi/" + song_no,
+                        dataType : "text",
+                        success  : showLyrics,
+                        error    : function(content, status, xhr) {
+                                    var msg = "Sorry but there was an error.";
+                                    $("#lyrics-box").html(msg + status + " " + xhr.statusText);
+                                   }
+             });
+             song_no = "";
+           });
+     }
+
+     var handler = function(event){
+         title = $("#title").val();
+         if(!title) $("#lyrics-box").fadeIn(1500, function(){ $("#lyrics-box").html("Please enter a song title ..."); });
+         else {
+           var fullurl = baseurl + "search/cu?title=" + title;
+           var artist_re = new RegExp( /\(([^)]*)\)/i);
+           var film_re = new RegExp( /\[(.*?)\]/i);
+           if( title.match(artist_re) ) {
+              splice = title.replace( artist_re, "" );
+              artist = RegExp.$1;
+              fullurl = baseurl + "search/cu?title=" + splice + "&artist=" + artist;
+           }
+           if( title.match(film_re) ) {
+              splice = title.replace( film_re, "" );
+              film = RegExp.$1;
+              fullurl = baseurl + "search/cu?title=" + splice + "&film=" + film;
+           }
+           $.ajax({
+             type     : "GET",
+             url      : fullurl,
+             dataType : "json",
+             success  : giitResult,
+             error    : function(content, status, xhr) {
+                          var msg = "Sorry but there was an error with: ";
+                          $("#lyrics-box").html(msg + fullurl);
+                        }
+           });
+
+         }
+     };
+     $(document).ready(function(){
+       $("#submit").click(handler);
+       return false;
+     });
+   </script>
+</body>
+</html>
