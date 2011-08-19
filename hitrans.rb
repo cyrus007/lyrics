@@ -1,26 +1,19 @@
-﻿## HiTrans  
-## Originally by Vinay P Jain based on ITRANS
-## Adapted by Swapan (swapan@yahoo.com) for ruby
-## Copyright Vinay P Jain under Creative Commons (by-nc-sa)
-## http://creativecommons.org/licenses/by-nc-sa/2.5/
-## -----------------------------------------------------
-## Copied from hitrans.js hosted by VPJ
-## -----------------------------------------------------
+﻿# HiTrans  
+# Originally by Vinay P Jain based on ITRANS
+# Adapted by Swapan (swapan@yahoo.com) for ruby
+# Copyright Vinay P Jain under Creative Commons (by-nc-sa)
+# http://creativecommons.org/licenses/by-nc-sa/2.5/
+# -----------------------------------------------------
+# Copied from hitrans.js hosted by VPJ
+# -----------------------------------------------------
 
 module HITRANS
 
-# def string2code(str)
-#   return str.unpack('c*').to_s
-# end
-
-# def code2string(str)
-#   eval(str).pack('c*')
-# end
-
   def HITRANS.convertHindi(strToConvert)
 
-    mystr = strToConvert.gsub(/##/, "$") + ' '
+    mystr = strToConvert + ' '
 
+    mystr.gsub!(/##/, "$")
     mystr.gsub!(/\$([^$]+)\$/) { |chop| "$"+$1.unpack('c*').to_s+"$" };
     mystr.gsub!(/(\\threedots)/," ... ");
 

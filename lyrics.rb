@@ -15,7 +15,6 @@ class Lyrics
       yield
       output = "<table border=\"0\" cellpadding=\"0\" style=\"color:#000;font-size:.8em\">\n<tr><td>Song: {title} </td></tr>\n<tr><td>From: {album} {year} </td></tr>\n<tr><td>Music Director: {composer} </td></tr>\n<tr><td>Lyrics: {lyricist}</td></tr>\n<tr><td>Singers: {singer} </td></tr> </table>\n<p style=\"color:#000;font-size:.8em\"> {lyrics} </p>\n<hr/><div style=\"margin-left:1em\">{links}</div>"
 
-      self.lyrics.sub!( /[\n]*/, "\n" )         #remove multiple blank lines
       self.lyrics.gsub!( /\n/, "\<br /\>" )     #replace line breaks with <br/>
       output.sub!( "{title}", self.title )
       output.sub!( "{album}", self.album )
@@ -41,7 +40,7 @@ class LI < Lyrics
   end
 
   def fetch_search(title)
-    fullurl = self.lyricsurl + "search?txt=#{title}&format=xml"
+p   fullurl = self.lyricsurl + "search?txt=#{title}&format=xml"
     Net::HTTP.get(URI.parse(fullurl))
   end
 
@@ -96,7 +95,7 @@ class GIIT < Lyrics
   end
 
   def fetch_search(title)
-    fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=search"
+p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=search"
     Net::HTTP.get(URI.parse(fullurl))
   end
 
@@ -142,9 +141,10 @@ class GIIT < Lyrics
       self.composer = response.match( /\\music\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
       self.lyricist = response.match( /\\lyrics\{([-a-zA-Z_.,()\s\/]*)\}%/ ) { $1 }.to_s
       response.gsub!(/##/, "$")
-      self.lyrics = response.match( /#indian([^#]*)#endindian/ ) { $1 }.to_s
-#     self.lyrics.gsub!( /%/, '' )
+      response.gsub!( /%{(.*?)}/ ) { "$"+$1+"$" }
+      self.lyrics = response.match( /#indian[\s\n\r%]*([^#]*)[\s\n\r%]*#endindian/ ) { $1 }.to_s
       self.lyrics = HITRANS::convertHindi( self.lyrics )
+      self.lyrics.gsub!( /%/, '' )
   end
 
   def format_show
@@ -175,6 +175,10 @@ class XBMC < GIIT
   end
 end
 
+before do
+  cache_control :public, :must_revalidate, :max_age => 600
+end
+
 get '/' do
   'Welcome to Hindi lyrics fetcher ...'
 end
@@ -196,7 +200,6 @@ get '/search/:use?*' do
 
   content = lyrics.fetch_search(title)
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry" ) )
-
   suggestion, song_no = lyrics.extract_songs(content)
   if suggestion.size == 1
     content = lyrics.fetch_show(song_no)
