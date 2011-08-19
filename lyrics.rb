@@ -27,7 +27,7 @@ class Lyrics
   end
 
   def format(items, artist='', film='')
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
   end
 end
 
@@ -225,5 +225,5 @@ get '/show/:use/:id', :provides => 'text' do |using, id|
 end
 
 error do
-  'Sorry there was some error.' + request.url
+  'Sorry there was some error with: ' + request.url
 end
