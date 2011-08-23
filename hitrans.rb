@@ -14,7 +14,7 @@ module HITRANS
     mystr = strToConvert + ' '
 
     mystr.gsub!(/##/, "$")
-    mystr.gsub!(/\$([^$]+)\$/) { |chop| "$"+$1.unpack('c*').to_s+"$" };
+    mystr.gsub!(/\$([^$]+)\$/) { "$"+$1.unpack('c*').to_s+"$" };
     mystr.gsub!(/(\\threedots)/," ... ");
 
     mystr.gsub!(/\.N/,"ँ");
@@ -1250,7 +1250,7 @@ module HITRANS
     mystr.gsub!(/w/,"व्");
     mystr.gsub!(/x/,"क्ष्");
 
-    mystr.gsub!(/\$([^$]*)\$/) { |chop| eval($1).pack('c*') };
+    mystr.gsub!(/\$([^$]*)\$/) { eval($1).pack('c*') };
 
     mystr.gsub!(/_/,"");
     mystr.gsub!(/\*/,"॰"); 

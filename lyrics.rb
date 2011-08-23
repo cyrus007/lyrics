@@ -148,6 +148,9 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
   end
 
   def format_show
+    suggestions = items.delete_if do |s|
+        (artist && !s[:artist].upcase.include?(artist))
+    end
     super.sub( "{links}", "<a href='http://giitaayan.com/'>Giitaayan</a>" )
   end
 
