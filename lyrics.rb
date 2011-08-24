@@ -27,7 +27,8 @@ class Lyrics
   end
 
   def format(items, artist='', film='')
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
+      items.to_json
+#     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
   end
 end
 
@@ -36,7 +37,6 @@ class LI < Lyrics
     super
     self.lyricsurl = "http://alpha.lyricsindia.net/songs/"
     self.showurl = "http://" + host + ":" + port.to_s + "/show/li/"
-    self.page_url = ""
   end
 
   def fetch_search(title)
@@ -45,7 +45,7 @@ p   fullurl = self.lyricsurl + "search?txt=#{title}&format=xml"
   end
 
   def fetch_show(song_no)
-    fullurl = self.lyricsurl + url + ".xml"
+    fullurl = self.lyricsurl + song_no + ".xml"
     Net::HTTP.get(URI.parse(fullurl))
   end
 
@@ -91,7 +91,6 @@ class GIIT < Lyrics
     self.lyricsurl = "http://giitaayan.com/"
     self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
     self.showurl = "http://" + host + ":" + port.to_s + "/show/gi/"
-    self.page_url = ""
   end
 
   def fetch_search(title)
@@ -148,32 +147,26 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
   end
 
   def format_show
-    suggestions = items.delete_if do |s|
-        (artist && !s[:artist].upcase.include?(artist))
-    end
-    super.sub( "{links}", "<a href='http://giitaayan.com/'>Giitaayan</a>" )
+    suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) }
+    super.sub!( "{links}", "<a href='http://giitaayan.com/'>Giitaayan</a>" )
   end
 
 end
 class XBMC < GIIT
   def initialize(host, port)
     super
-#   self.lyricsurl = "http://192.168.1.150/itrans/"
     self.showurl = "http://" + host + ":" + port.to_s + "/show/cu/"
-    self.page_url = ""
   end
 
   def format_show
       yield
       output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<lyrics>#{self.lyrics}</lyrics>"
       output.gsub!( /^\s[\s]+/, "" )       #remove multiple blank lines
-#     output.gsub!( /\n/, "\<br /\>" )     #replace line breaks with <br/>
   end
 
+#if artist or film is provided then filter out ones not matching it
   def format(items, artist='', film='')
-      suggestions = items.delete_if do |s|
-          (artist && !s[:artist].upcase.include?(artist)) || (film && !s[:film].upcase.include?(film))
-      end
+      suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) || (film && !s[:film].upcase.include?(film)) }
       suggestions.to_json
   end
 end
@@ -195,6 +188,7 @@ get '/search/:use?*' do
   artist = params[:Artist].upcase if (!artist) && params[:Artist]
   film = params[:film].upcase if params[:film]
   film = params[:Film].upcase if (!film) && params[:Film]
+
   return Lyrics:ERRORMSG if using.empty? || title.empty?
 
   if using == 'li' then lyrics = LI.new(request.host, request.port) end
@@ -217,12 +211,11 @@ get '/show/:use/:id', :provides => 'text' do |using, id|
 
   return Lyrics::ERRMSG if using.empty? || id.empty?
 
-  if using == 'li' then lyrics = LI.new(request.host, request.port) end
+  if using == 'li' then lyrics = LI.new(request.host, request.port)   end
   if using == 'gi' then lyrics = GIIT.new(request.host, request.port) end
   if using == 'cu' then lyrics = XBMC.new(request.host, request.port) end
 
-  song_id = URI.escape(id)
-  content = lyrics.fetch_show(song_id)
+  content = lyrics.fetch_show( URI.escape(id) )
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry" ) )
   return lyrics.format_show { lyrics.parse(content) }
 end
