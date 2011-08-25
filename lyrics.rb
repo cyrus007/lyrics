@@ -27,8 +27,7 @@ class Lyrics
   end
 
   def format(items, artist='', film='')
-      items.to_json
-#     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
+      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
   end
 end
 
@@ -82,6 +81,7 @@ p   fullurl = self.lyricsurl + "search?txt=#{title}&format=xml"
   def format_show
     super.sub!( "{links}", "<a href='http://lyricsindia.net/'>LyricsIndia</a>" )
   end
+
 end
 class GIIT < Lyrics
   attr_accessor :cisburl
@@ -147,10 +147,17 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
   end
 
   def format_show
-    suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) }
     super.sub!( "{links}", "<a href='http://giitaayan.com/'>Giitaayan</a>" )
   end
 
+  def format(items, artist='', film='')
+      suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) }
+      result = suggestions.map do |s|
+               { :title => s[:title], :url => self.showurl+s[:id],
+                 :film => s[:film],   :artist => s[:artist] }
+      end
+      result.to_json
+  end
 end
 class XBMC < GIIT
   def initialize(host, port)
