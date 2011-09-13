@@ -26,7 +26,7 @@ class Lyrics
       return output
   end
 
-  def format(items, artist='', film='')
+  def format(items, artist=nil, film=nil)
       "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<suggestions page_url=\"#{self.page_url}\">\n" + items.map { |s| "<suggestion title=\"#{s[:title]}\" artist=\"#{s[:artist]}\" url=\"#{self.showurl}#{s[:id]}\" />\n" }.join + "</suggestions>"
   end
 end
@@ -150,7 +150,7 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
     super.sub!( "{links}", "<a href='http://giitaayan.com/'>Giitaayan</a>" )
   end
 
-  def format(items, artist='', film='')
+  def format(items, artist=nil, film=nil)
       suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) }
       result = suggestions.map do |s|
                { :title => s[:title], :url => self.showurl+s[:id],
@@ -172,7 +172,7 @@ class XBMC < GIIT
   end
 
 #if artist or film is provided then filter out ones not matching it
-  def format(items, artist='', film='')
+  def format(items, artist=nil, film=nil)
       suggestions = items.delete_if { |s| (artist && !s[:artist].upcase.include?(artist)) || (film && !s[:film].upcase.include?(film)) }
       suggestions.to_json
   end
@@ -183,7 +183,7 @@ before do
 end
 
 get '/' do
-  'Welcome to Hindi lyrics fetcher ...'
+  redirect '/index.html'
 end
 
 get '/search/:use?*' do
@@ -198,9 +198,9 @@ get '/search/:use?*' do
 
   return Lyrics:ERRORMSG if using.empty? || title.empty?
 
-  if using == 'li' then lyrics = LI.new(request.host, request.port) end
-  if using == 'gi' then lyrics = GIIT.new(request.host, request.port) end
-  if using == 'cu' then lyrics = XBMC.new(request.host, request.port) end
+  lyrics = LI.new(request.host, request.port)   if using == 'li' 
+  lyrics = GIIT.new(request.host, request.port) if using == 'gi' 
+  lyrics = XBMC.new(request.host, request.port) if using == 'cu' 
 
   content = lyrics.fetch_search(title)
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry" ) )
@@ -214,13 +214,13 @@ get '/search/:use?*' do
   end
 end
 
-get '/show/:use/:id', :provides => 'text' do |using, id|
+get '/show/:use/:id' do |using, id|
 
   return Lyrics::ERRMSG if using.empty? || id.empty?
 
-  if using == 'li' then lyrics = LI.new(request.host, request.port)   end
-  if using == 'gi' then lyrics = GIIT.new(request.host, request.port) end
-  if using == 'cu' then lyrics = XBMC.new(request.host, request.port) end
+  lyrics = LI.new(request.host, request.port)   if using == 'li' 
+  lyrics = GIIT.new(request.host, request.port) if using == 'gi' 
+  lyrics = XBMC.new(request.host, request.port) if using == 'cu' 
 
   content = lyrics.fetch_show( URI.escape(id) )
   return Lyrics::ERRORMSG if( content.empty? || content.include?( "Sorry" ) )
