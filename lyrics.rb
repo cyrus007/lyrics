@@ -89,7 +89,8 @@ class GIIT < Lyrics
   def initialize(host, port)
     super
     self.lyricsurl = "http://giitaayan.com/"
-    self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
+#   self.cisburl = "http://thaxi.hsc.usc.edu/rmim/giitaayan/"
+    self.cisburl = "http://www.giitaayan.com/"
     self.showurl = "http://" + host + ":" + port.to_s + "/show/gi/"
   end
 
@@ -119,7 +120,8 @@ p   fullurl = self.lyricsurl + "search.asp?browse=stitle&s=#{title}&submit=searc
         cells = rows[i-page*50].split("<td>")
         film = cells[4].match(/">[^<]*[\/]*<\//).to_s
         artist = cells[7].match(/">[^<]*[\/]*<\//).to_s
-        src, song_no = cells[1].match(/http:\/\/thaxi\.hsc\.usc\.edu\/rmim\/giitaayan\/(.*).isb/) { |m| $1 }.split('/')
+#       src, song_no = cells[1].match(/http:\/\/thaxi\.hsc\.usc\.edu\/rmim\/giitaayan\/(.*).isb/) { |m| $1 }.split('/')
+        src, song_no = cells[1].match(/http:\/\/www\.giitaayan\.com\/(.*).isb/) { |m| $1 }.split('/')
         song_no = (src == 'cisb' ? 'cisb' + song_no : song_no)       #src can be either cisb or rmim
         suggestion << { :title => HITRANS::convertHindi(cells[3][0...cells[3].index(/&nbsp;/)]),
                         :id => song_no,
